@@ -6,7 +6,7 @@ const router = Router();
 
 router.post('/register', register);
 router.post('/login', login);
-router.get('/google', googleAuth);
+router.post('/google', googleAuth);
 router.get('/google/callback', googleCallback);
 router.post('/refresh', refresh);
 router.post('/logout', authenticate, logout);

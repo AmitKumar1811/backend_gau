@@ -5,6 +5,7 @@ import Token from '../models/Token.js';
 import { hashPassword, comparePassword } from '../utils/password.js';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken, revokeUserTokens } from '../utils/token.js';
 import { registerSchema, loginSchema, passwordChangeSchema } from '../validators/authValidators.js';
+import admin from '../config/firebase.js';
 
 export const register = async (req, res, next) => {
   try {
@@ -47,7 +48,7 @@ export const login = async (req, res, next) => {
   }
 };
 
-export const googleAuth = passport.authenticate('google', { scope: ['profile', 'email'] });
+export const googleAuthRedirect = passport.authenticate('google', { scope: ['profile', 'email'] });
 
 export const googleCallback = (req, res, next) =>
   passport.authenticate('google', { session: false }, async (err, user) => {
@@ -56,6 +57,60 @@ export const googleCallback = (req, res, next) =>
     const refreshToken = await generateRefreshToken(user._id);
     res.json({ user: sanitizeUser(user), accessToken, refreshToken });
   })(req, res, next);
+
+export const googleAuth = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ message: 'Token is required' });
+    }
+
+    // Verify Firebase ID Token
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    const { uid, email, name, picture } = decodedToken;
+
+    // Check if user exists
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Create new user
+      // Note: mapping firebase uid to googleId for now, or just storing it.
+      // Existing schema has googleId.
+      user = await User.create({
+        name: name || 'User',
+        email,
+        googleId: uid, // storing firebase uid here
+        role: 'user',
+        isBlocked: false
+      });
+    } else {
+      // Update existing user with googleId if missing
+      if (!user.googleId) {
+        user.googleId = uid;
+        await user.save();
+      }
+    }
+
+    if (user.isBlocked) {
+      return res.status(403).json({ message: 'Account blocked' });
+    }
+
+    const accessToken = generateAccessToken(user._id, user.role);
+    const refreshToken = await generateRefreshToken(user._id);
+
+    res.json({
+      user: sanitizeUser(user),
+      accessToken,
+      refreshToken
+    });
+  } catch (error) {
+    console.error('Google Auth Error:', error);
+    if (admin.apps.length === 0) {
+      return res.status(500).json({ message: 'Server configuration error: Firebase not initialized' });
+    }
+    res.status(401).json({ message: 'Invalid or expired token', error: error.message });
+  }
+};
 
 export const refresh = async (req, res, next) => {
   try {
