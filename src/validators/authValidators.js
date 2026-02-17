@@ -13,14 +13,14 @@ export const loginSchema = Joi.object({
 });
 
 export const addressSchema = Joi.object({
-  fullName: Joi.string().required(),
+  type: Joi.string().required(),
+  name: Joi.string().required(),
   phone: Joi.string().required(),
-  addressLine: Joi.string().required(),
-  landmark: Joi.string().allow('', null),
+  addressLine1: Joi.string().required(),
+  addressLine2: Joi.string().allow('', null),
   city: Joi.string().required(),
   state: Joi.string().required(),
   pincode: Joi.string().required(),
-  country: Joi.string().default('India'),
   isDefault: Joi.boolean().default(false)
 });
 
