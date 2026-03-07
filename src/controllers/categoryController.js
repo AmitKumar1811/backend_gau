@@ -3,6 +3,7 @@ import Category from '../models/Category.js';
 import { categoryCreateSchema, categoryUpdateSchema } from '../validators/categoryValidators.js';
 
 export const getCategories = async (req, res, next) => {
+  console.log("req is coming",)
   try {
     const categories = await Category.find();
     res.json(categories);

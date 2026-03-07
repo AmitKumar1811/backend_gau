@@ -24,9 +24,21 @@ export const getProducts = async (req, res, next) => {
 
 export const getProduct = async (req, res, next) => {
   try {
-    const product = await Product.findOne({ slug: req.params.slug });
+    const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: 'Product not found' });
     res.json(product);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getProductsByCategoryId = async (req, res, next) => {
+  try {
+    const { categoryid } = req.params;
+    console.log('req',req,categoryid)
+    const products = await Product.find({ categoryId: categoryid });
+    console.log("products", products)
+    res.json(products);
   } catch (err) {
     next(err);
   }

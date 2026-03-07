@@ -9,6 +9,7 @@ import admin from '../config/firebase.js';
 
 export const register = async (req, res, next) => {
   try {
+    console.log("register api calling ",req.body)
     const { value, error } = registerSchema.validate(req.body);
     if (error) return res.status(400).json({ message: error.message });
 
